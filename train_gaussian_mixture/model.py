@@ -31,7 +31,7 @@ else:
 	config.a = 0
 	config.b = 1
 	config.c = 1
-	config.weight_std = 0.001
+	config.weight_std = 0.01
 	config.weight_initializer = "Normal"
 	config.use_weightnorm = False
 	config.nonlinearity = "leaky_relu"
@@ -75,7 +75,7 @@ else:
 	config.num_mixture = args.num_mixture
 	config.distribution_output = "universal"
 	config.use_weightnorm = False
-	config.weight_std = 0.02
+	config.weight_std = 0.01
 	config.weight_initializer = "Normal"
 	config.nonlinearity = "relu"
 	config.optimizer = "adam"

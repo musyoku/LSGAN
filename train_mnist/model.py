@@ -28,45 +28,41 @@ if os.path.isfile(discriminator_sequence_filename):
 	print "loading", discriminator_sequence_filename
 	with open(discriminator_sequence_filename, "r") as f:
 		try:
-			params = json.load(f)
+			discriminator_params = json.load(f)
 		except Exception as e:
 			raise Exception("could not load {}".format(discriminator_sequence_filename))
 else:
 	config = DiscriminatorParams()
-	config.ndim_input = image_width * image_height
-	config.clamp_lower = -0.01
-	config.clamp_upper = 0.01
-	config.num_critic = 5
-	config.weight_init_std = 0.001
+	config.a = 0
+	config.b = 1
+	config.c = 1
+	config.weight_std = 0.01
 	config.weight_initializer = "Normal"
 	config.use_weightnorm = False
 	config.nonlinearity = "leaky_relu"
-	config.optimizer = "rmsprop"
+	config.optimizer = "adam"
 	config.learning_rate = 0.0001
 	config.momentum = 0.5
 	config.gradient_clipping = 1
 	config.weight_decay = 0
-	config.use_feature_matching = False
-	config.use_minibatch_discrimination = False
 
-	discriminator = Sequential(weight_initializer=config.weight_initializer, weight_init_std=config.weight_init_std)
+	discriminator = Sequential()
 	discriminator.add(Linear(None, 500, use_weightnorm=config.use_weightnorm))
 	# discriminator.add(gaussian_noise(std=0.5))
 	discriminator.add(Activation(config.nonlinearity))
 	# discriminator.add(BatchNormalization(500))
-	if config.use_minibatch_discrimination:
-		discriminator.add(MinibatchDiscrimination(None, num_kernels=50, ndim_kernel=5))
 	discriminator.add(Linear(None, 500, use_weightnorm=config.use_weightnorm))
+	discriminator.add(Activation(config.nonlinearity))
+	# discriminator.add(BatchNormalization(500))
+	discriminator.add(Linear(None, 1, use_weightnorm=config.use_weightnorm))
 
-	params = {
+	discriminator_params = {
 		"config": config.to_dict(),
 		"model": discriminator.to_dict(),
 	}
 
 	with open(discriminator_sequence_filename, "w") as f:
-		json.dump(params, f, indent=4, sort_keys=True, separators=(',', ': '))
-
-discriminator_params = params
+		json.dump(discriminator_params, f, indent=4, sort_keys=True, separators=(',', ': '))
 
 # specify generator
 generator_sequence_filename = args.model_dir + "/generator.json"
@@ -75,7 +71,7 @@ if os.path.isfile(generator_sequence_filename):
 	print "loading", generator_sequence_filename
 	with open(generator_sequence_filename, "r") as f:
 		try:
-			params = json.load(f)
+			generator_params = json.load(f)
 		except:
 			raise Exception("could not load {}".format(generator_sequence_filename))
 else:
@@ -84,38 +80,36 @@ else:
 	config.ndim_output = image_width * image_height
 	config.distribution_output = "tanh"
 	config.use_weightnorm = False
-	config.weight_init_std = 0.1
+	config.weight_std = 0.01
 	config.weight_initializer = "Normal"
 	config.nonlinearity = "relu"
 	config.optimizer = "adam"
 	config.learning_rate = 0.0001
 	config.momentum = 0.5
-	config.gradient_clipping = 10
+	config.gradient_clipping = 1
 	config.weight_decay = 0
 
 	# generator
-	generator = Sequential(weight_initializer=config.weight_initializer, weight_init_std=config.weight_init_std)
+	generator = Sequential()
 	generator.add(Linear(config.ndim_input, 500, use_weightnorm=config.use_weightnorm))
-	generator.add(BatchNormalization(500))
 	generator.add(Activation(config.nonlinearity))
+	# generator.add(BatchNormalization(500))
 	generator.add(Linear(None, 500, use_weightnorm=config.use_weightnorm))
-	generator.add(BatchNormalization(500))
 	generator.add(Activation(config.nonlinearity))
+	# generator.add(BatchNormalization(500))
 	generator.add(Linear(None, config.ndim_output, use_weightnorm=config.use_weightnorm))
 	if config.distribution_output == "sigmoid":
 		generator.add(Activation("sigmoid"))
 	if config.distribution_output == "tanh":
 		generator.add(Activation("tanh"))
 
-	params = {
+	generator_params = {
 		"config": config.to_dict(),
 		"model": generator.to_dict(),
 	}
 
 	with open(generator_sequence_filename, "w") as f:
-		json.dump(params, f, indent=4, sort_keys=True, separators=(',', ': '))
-
-generator_params = params
+		json.dump(generator_params, f, indent=4, sort_keys=True, separators=(',', ': '))
 
 gan = GAN(discriminator_params, generator_params)
 gan.load(args.model_dir)

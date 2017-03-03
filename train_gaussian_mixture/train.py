@@ -60,7 +60,7 @@ def main():
 			d_true = gan.discriminate(samples_true / scale, return_activations=False)
 			d_fake = gan.discriminate(samples_fale / scale, return_activations=False)
 
-			loss_d = 0.5 * (F.sum((d_true - b) ** 2) + F.sum((d_fake - a) ** 2))
+			loss_d = 0.5 * (F.sum((d_true - b) ** 2) + F.sum((d_fake - a) ** 2)) / batchsize_true
 			sum_loss_d += float(loss_d.data)
 
 			# update discriminator
@@ -69,7 +69,7 @@ def main():
 			# generator loss
 			samples_fale = gan.generate_x(batchsize_fake, from_gaussian=True)
 			d_fake = gan.discriminate(samples_fale / scale, return_activations=False)
-			loss_g = 0.5 * (F.sum((d_fake - c) ** 2))
+			loss_g = 0.5 * (F.sum((d_fake - c) ** 2)) / batchsize_fake
 			sum_loss_g += float(loss_g.data)
 
 			# update generator

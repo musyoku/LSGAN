@@ -38,6 +38,11 @@ def main():
 	discriminator_config = gan.config_discriminator
 	generator_config = gan.config_generator
 
+	# labels
+	a = discriminator_config.a
+	b = discriminator_config.b
+	c = discriminator_config.c
+
 	# settings
 	max_epoch = 1000
 	num_updates_per_epoch = 500
@@ -53,8 +58,8 @@ def main():
 	# init weightnorm layers
 	if discriminator_config.use_weightnorm:
 		print "initializing weight normalization layers of the discriminator ..."
-		x_true = sample_from_data(images, batchsize_true)
-		gan.discriminate(x_true)
+		images_true = sample_from_data(images, batchsize_true)
+		gan.discriminate(images_true)
 
 	if generator_config.use_weightnorm:
 		print "initializing weight normalization layers of the generator ..."
@@ -64,50 +69,32 @@ def main():
 	progress = Progress()
 	for epoch in xrange(1, max_epoch + 1):
 		progress.start_epoch(epoch, max_epoch)
-		sum_loss_critic = 0
-		sum_loss_generator = 0
-		learning_rate = get_learning_rate_for_epoch(epoch)
-		gan.update_learning_rate(learning_rate)
+		sum_loss_d = 0
+		sum_loss_g = 0
 
 		for t in xrange(num_updates_per_epoch):
+			# sample data
+			images_true = sample_from_data(images, batchsize_true)
+			images_fake = gan.generate_x(batchsize_true)
+			images_fake.unchain_backward()
 
-			for k in xrange(discriminator_config.num_critic):
-				# clamp parameters to a cube
-				gan.clip_discriminator_weights()
-				# gan.scale_discriminator_weights()
+			d_true = gan.discriminate(images_true, return_activations=False)
+			d_fake = gan.discriminate(images_fake, return_activations=False)
 
-				# sample data
-				x_true = sample_from_data(images, batchsize_true)
-				x_fake = gan.generate_x(batchsize_true)
-				x_fake.unchain_backward()
+			loss_d = 0.5 * (F.sum((d_true - b) ** 2) + F.sum((d_fake - a) ** 2)) / batchsize_true
+			sum_loss_d += float(loss_d.data)
 
-				fw_u, activations_u = gan.discriminate(x_true)
-				fw_g, _ = gan.discriminate(x_fake)
-
-				loss_critic = -F.sum(fw_u - fw_g) / batchsize_true
-				sum_loss_critic += float(loss_critic.data) / discriminator_config.num_critic
-
-				# update discriminator
-				gan.backprop_discriminator(loss_critic)
+			# update discriminator
+			gan.backprop_discriminator(loss_d)
 
 			# generator loss
-			x_fake = gan.generate_x(batchsize_fake)
-			fw_g, activations_g = gan.discriminate(x_fake)
-			loss_generator = -F.sum(fw_g) / batchsize_fake
-
-			# feature matching
-			if discriminator_config.use_feature_matching:
-				features_true = activations_u[-1]
-				features_true.unchain_backward()
-				if batchsize_true != batchsize_fake:
-					x_fake = gan.generate_x(batchsize_true)
-					_, activations_g = gan.discriminate(x_fake, apply_softmax=False)
-				features_fake = activations_g[-1]
-				loss_generator += F.mean_squared_error(features_true, features_fake)
+			images_fake = gan.generate_x(batchsize_fake)
+			d_fake = gan.discriminate(images_fake, return_activations=False)
+			loss_g = 0.5 * (F.sum((d_fake - c) ** 2)) / batchsize_fake
+			sum_loss_g += float(loss_g.data)
 
 			# update generator
-			gan.backprop_generator(loss_generator)
-			sum_loss_generator += float(loss_generator.data)
+			gan.backprop_generator(loss_g)
 			
 			if t % 10 == 0:
 				progress.show(t, num_updates_per_epoch, {})
@@ -115,9 +102,8 @@ def main():
 		gan.save(args.model_dir)
 
 		progress.show(num_updates_per_epoch, num_updates_per_epoch, {
-			"wasserstein": -sum_loss_critic / num_updates_per_epoch,
-			"loss_g": sum_loss_generator / num_updates_per_epoch,
-			"lr": learning_rate
+			"loss_d": sum_loss_d / num_updates_per_epoch,
+			"loss_g": sum_loss_g / num_updates_per_epoch,
 		})
 
 		if epoch % plot_interval == 0 or epoch == 1:
