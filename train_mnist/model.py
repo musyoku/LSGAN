@@ -36,13 +36,13 @@ else:
 	config.a = 0
 	config.b = 1
 	config.c = 1
-	config.weight_std = 0.01
+	config.weight_std = 0.001
 	config.weight_initializer = "Normal"
 	config.use_weightnorm = False
-	config.nonlinearity = "leaky_relu"
+	config.nonlinearity = "elu"
 	config.optimizer = "adam"
 	config.learning_rate = 0.0001
-	config.momentum = 0.5
+	config.momentum = 0.1
 	config.gradient_clipping = 1
 	config.weight_decay = 0
 
@@ -80,12 +80,12 @@ else:
 	config.ndim_output = image_width * image_height
 	config.distribution_output = "tanh"
 	config.use_weightnorm = False
-	config.weight_std = 0.01
+	config.weight_std = 0.001
 	config.weight_initializer = "Normal"
 	config.nonlinearity = "relu"
 	config.optimizer = "adam"
 	config.learning_rate = 0.0001
-	config.momentum = 0.5
+	config.momentum = 0.1
 	config.gradient_clipping = 1
 	config.weight_decay = 0
 
