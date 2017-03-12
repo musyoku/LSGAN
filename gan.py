@@ -6,7 +6,6 @@ from chainer import cuda, Variable, optimizers, serializers, function, optimizer
 from chainer.utils import type_check
 from chainer import functions as F
 from chainer import links as L
-from params import Params
 import sequential
 
 class Object(object):
@@ -17,21 +16,29 @@ def to_object(dict):
 	for key, value in dict.iteritems():
 		setattr(obj, key, value)
 	return obj
+	
+class Params():
+	def __init__(self, dict=None):
+		if dict:
+			self.from_dict(dict)
 
-class Sequential(sequential.Sequential):
+	def from_dict(self, dict):
+		for attr, value in dict.iteritems():
+			if hasattr(self, attr):
+				setattr(self, attr, value)
 
-	def __call__(self, x, test=False):
-		activations = []
-		for i, link in enumerate(self.links):
-			if isinstance(link, sequential.functions.dropout):
-				x = link(x, train=not test)
-			elif isinstance(link, chainer.links.BatchNormalization):
-				x = link(x, test=test)
+	def to_dict(self):
+		dict = {}
+		for attr, value in self.__dict__.iteritems():
+			if hasattr(value, "to_dict"):
+				dict[attr] = value.to_dict()
 			else:
-				x = link(x)
-				if isinstance(link, sequential.functions.ActivationFunction):
-					activations.append(x)
-		return x, activations
+				dict[attr] = value
+		return dict
+
+	def dump(self):
+		for attr, value in self.__dict__.iteritems():
+			print "	{}: {}".format(attr, value)
 
 class DiscriminatorParams(Params):
 	def __init__(self):
@@ -40,7 +47,6 @@ class DiscriminatorParams(Params):
 		self.c = 1
 		self.weight_std = 0.001
 		self.weight_initializer = "Normal"		# Normal, GlorotNormal or HeNormal
-		self.use_weightnorm = False
 		self.nonlinearity = "leaky_relu"
 		self.optimizer = "adam"
 		self.learning_rate = 0.0001
@@ -54,7 +60,6 @@ class GeneratorParams(Params):
 		self.ndim_output = 2
 		self.num_mixture = 8
 		self.distribution_output = "universal"	# universal, sigmoid or tanh
-		self.use_weightnorm = False
 		self.weight_std = 0.02
 		self.weight_initializer = "Normal"		# Normal, GlorotNormal or HeNormal
 		self.nonlinearity = "relu"

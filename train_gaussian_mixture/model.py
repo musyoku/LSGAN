@@ -4,7 +4,6 @@ import json, os, sys
 from args import args
 from chainer import cuda
 sys.path.append(os.path.split(os.getcwd())[0])
-from params import Params
 from gan import GAN, DiscriminatorParams, GeneratorParams
 from sequential import Sequential
 from sequential.layers import Linear
@@ -33,7 +32,6 @@ else:
 	config.c = 1
 	config.weight_std = 0.01
 	config.weight_initializer = "Normal"
-	config.use_weightnorm = False
 	config.nonlinearity = "leaky_relu"
 	config.optimizer = "adam"
 	config.learning_rate = 0.0001
@@ -42,13 +40,13 @@ else:
 	config.weight_decay = 0
 
 	discriminator = Sequential()
-	discriminator.add(Linear(None, 128, use_weightnorm=config.use_weightnorm))
+	discriminator.add(Linear(None, 128))
 	discriminator.add(Activation(config.nonlinearity))
 	# discriminator.add(BatchNormalization(128))
-	discriminator.add(Linear(None, 128, use_weightnorm=config.use_weightnorm))
+	discriminator.add(Linear(None, 128))
 	discriminator.add(Activation(config.nonlinearity))
 	# discriminator.add(BatchNormalization(128))
-	discriminator.add(Linear(None, 1, use_weightnorm=config.use_weightnorm))
+	discriminator.add(Linear(None, 1))
 
 	discriminator_params = {
 		"config": config.to_dict(),
