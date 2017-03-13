@@ -15,9 +15,7 @@
 
 generated images
 
-![image](https://github.com/musyoku/musyoku.github.io/blob/master/images/post/2017-03-06/mnist.png?raw=true)
-
-I could not have done well for some reason.
+![image](https://github.com/musyoku/musyoku.github.io/blob/master/images/post/2017-03-06/mnist_new.png?raw=true)
 
 ## Animeface Dataset
 

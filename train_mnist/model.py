@@ -77,7 +77,6 @@ else:
 	config.ndim_input = ndim_latent_code
 	config.ndim_output = image_width * image_height
 	config.distribution_output = "tanh"
-	config.use_weightnorm = False
 	config.weight_std = 0.001
 	config.weight_initializer = "Normal"
 	config.nonlinearity = "relu"
@@ -89,13 +88,13 @@ else:
 
 	# generator
 	generator = Sequential()
-	generator.add(Linear(config.ndim_input, 500, use_weightnorm=config.use_weightnorm))
+	generator.add(Linear(config.ndim_input, 500))
 	generator.add(Activation(config.nonlinearity))
-	# generator.add(BatchNormalization(500))
-	generator.add(Linear(None, 500, use_weightnorm=config.use_weightnorm))
+	generator.add(BatchNormalization(500))
+	generator.add(Linear(None, 500))
 	generator.add(Activation(config.nonlinearity))
-	# generator.add(BatchNormalization(500))
-	generator.add(Linear(None, config.ndim_output, use_weightnorm=config.use_weightnorm))
+	generator.add(BatchNormalization(500))
+	generator.add(Linear(None, config.ndim_output))
 	if config.distribution_output == "sigmoid":
 		generator.add(Activation("sigmoid"))
 	if config.distribution_output == "tanh":
